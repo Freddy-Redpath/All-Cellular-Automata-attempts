@@ -1,0 +1,116 @@
+import random
+import numpy as np
+import pygame
+from pygame.locals import *
+import colorsys
+w = 30
+width, height = 900, 600
+rows, cols = width // w, height // w
+grid = np.zeros((rows, cols), dtype=int)
+clock = pygame.time.Clock()
+Window = pygame.display.set_mode((width,height))
+showGrid = False
+
+def calculateNeigbours(cx,cy):
+    neigbourSum = 0
+    for x in range (-1, 2):
+        for y in range(-1, 2):
+            if x == 0 and y == 0:  # Skip the current cell
+                continue
+            nx, ny = (cx + x) % rows, (cy + y) % cols
+            neigbourSum += grid[nx][ny]
+
+    return neigbourSum
+
+
+
+def draw():
+    Window.fill((255, 255, 255))
+    global showGrid
+    # Draw the sand
+    for x in range(rows):
+        for y in range(cols):
+            if grid[x][y] > 0:
+                color = (0,0,0)
+                pygame.draw.rect(Window,color, (x * w, y * w, w, w))
+            else:
+                color = (255, 255, 255)
+                pygame.draw.rect(Window, color, (x * w, y * w, w, w))
+    if showGrid:
+        drawGrid()
+    pygame.display.flip()
+def drawGrid():
+
+    color = (128, 128, 128)
+    for x in range(0, width // w):
+            for y in range(0, height // w):
+                pygame.draw.line(Window, color, (x * w, y), (x * w, height))
+                pygame.draw.line(Window, color, (x, y * w), (width, y * w))
+
+def initiateGrid():
+
+    #pass
+
+ #for random generation
+    for x in range(rows):
+        for y in range(cols):
+            grid[x][y] = random.randint(0,1)
+
+
+
+
+
+def setCell(screenX,screenY):
+    gridPosX,gridPosY = int(screenX/w),int(screenY/w)
+
+    if grid[gridPosX][gridPosY] == 1:
+        grid[gridPosX][gridPosY] = 0
+    elif grid[gridPosX][gridPosY] == 0:
+        grid[gridPosX][gridPosY] = 1
+
+    draw()
+
+
+def main():
+    pygame.init()
+    initiateGrid()
+
+
+    running = True
+    paused = False
+    while running:
+
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p or  event.key == pygame.K_SPACE:
+                    paused = not paused
+                if event.key == pygame.K_g:
+                    global showGrid
+                    showGrid = not showGrid
+                   
+                    draw()
+            if event.type == pygame.MOUSEBUTTONDOWN and paused:
+                mousePosition = pygame.mouse.get_pos()
+
+                setCell(mousePosition[0],mousePosition[1])
+
+            if event.type == QUIT:
+                running = False
+        if not paused:
+            newGrid = np.zeros_like(grid)
+            for x in range(rows):
+                for y in range(cols):
+                    neigbours = calculateNeigbours(x, y)
+                    if neigbours >=2 and neigbours <= 3 and grid[x][y] == 1:
+                        newGrid[x][y] = 1
+                    elif neigbours == 3 and grid[x][y] == 0:
+                        newGrid[x][y] = 1
+
+                    else:
+                        newGrid[x][y] =0
+            grid[:] = newGrid
+        draw()
+        clock.tick(10)
+
+if __name__ == "__main__":
+    main()
